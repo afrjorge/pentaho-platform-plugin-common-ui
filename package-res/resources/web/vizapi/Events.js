@@ -9,77 +9,70 @@ author: James Dixon
 
 pentaho = typeof pentaho == "undefined" ? {} : pentaho;
 
-pentaho.events = {};
-
-// an array of event listeners
-pentaho.events.listeners = [];
+pentaho.events = {
+    // An array of event listeners
+    listeners: []
+};
 
 /*
     trigger
     Triggers an event by notifying all of the listeners that the event has occurred.
 */
-pentaho.events.trigger = function( object, eventName, args ) {
-
-    // examine each listener
-    for(var lNo=0; lNo<pentaho.events.listeners.length; lNo++ ) {
-        if( pentaho.events.listeners[lNo].object == object && pentaho.events.listeners[lNo].eventName == eventName ) {
-            // the event matches this listener's object and event name
-            pentaho.events.listeners[lNo].func( args );
+pentaho.events.trigger = function(source, eventName, args) {
+    var listeners = pentaho.events.listeners;
+    for(var lNo = 0; lNo < listeners.length; lNo++) {
+        var listener = listeners[lNo];
+        if(listener.object === source && listener.eventName === eventName) {
+            listener.func(args);
         }
     }
-}
+};
 
 /*
     addListener
     Adds a listener for an event
     
-    object      The object to listen to
+    source      The object to listen to
     eventName   The name of the event to listen to
     func        The function to call when the event happens
 */
-pentaho.events.addListener = function(object, eventName, func ) {
+pentaho.events.addListener = function(source, eventName, func) {
     pentaho.events.listeners.push({
-        object: object,
+        object:    source,
         eventName: eventName,
-        func: func
+        func:      func
     });
-}
+};
 
 /*
     removeListener
     Removes a listener for an event
     
-    object      The object to listen to
-    eventName   The name of the event to listen to
+    source      The object to listen to
+    eventName   The name of the event to listen to (optional)
+    func        The function to call when the event happens (optional)
 */
-pentaho.events.removeListener = function(object, eventName ) {
-
+pentaho.events.removeListener = function(source, eventName, func) {
+    var listeners = pentaho.events.listeners;
     var lNo = 0;
-    while(lNo<pentaho.events.listeners.length ) {
-        if( pentaho.events.listeners[lNo].object == object && pentaho.events.listeners[lNo].eventName == eventName ) {
-            pentaho.events.listeners.splice(lNo,1);
+    while(lNo < listeners.length) {
+        var listener = listeners[lNo];
+        if(listener.object === source && 
+           (!eventName || listener.eventName === eventName) &&
+           (!func      || listener.func      === func     )) {
+            listeners.splice(lNo, 1);
         } else {
             lNo++;
         }
     }
-    
-}
+};
 
 /*
     removeSource
     Removes all the listeners for the specified ibject
     
-    object      The object to listen to remove
+    source      The object to listen to remove
 */
-pentaho.events.removeSource = function(object) {
-
-    var lNo = 0;
-    while(lNo<pentaho.events.listeners.length ) {
-        if( pentaho.events.listeners[lNo].object == object ) {
-            pentaho.events.listeners.splice(lNo,1);
-        } else {
-            lNo++;
-        }
-    }
-    
-}
+pentaho.events.removeSource = function(source) {
+    pentaho.events.removeListener(source);
+};

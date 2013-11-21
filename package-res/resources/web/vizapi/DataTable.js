@@ -19,14 +19,14 @@ pentaho = typeof pentaho == "undefined" ? {} : pentaho;
     Constructor.
     jsonTable:      A CDA JSON table object or a Google DataTable JSON object
 */
-pentaho.DataTable = function( jsonTable ) {
+pentaho.DataTable = function(jsonTable) {
     this.jsonTable = jsonTable;
     this.className = "pentaho.DataTable";
-    if( jsonTable.metadata ) {
+    if(jsonTable.metadata) {
         // convert from CDA to DataTable
         this.jsonTable = pentaho.DataTable.convertCdaToDataTable(jsonTable);
     }
-}
+};
 
 /*
     convertCdaToDataTable
@@ -59,56 +59,51 @@ pentaho.DataTable = function( jsonTable ) {
     cdaTable:   a CDA JSON table
     returns:    a Google DataTable JSON table object
 */
-pentaho.DataTable.convertCdaToDataTable = function( cdaTable ) {
-
+pentaho.DataTable.convertCdaToDataTable = function(cdaTable) {
     var cols = [];
     var rows = [];
-    
+    var cdaMetadata = cdaTable.metadata;
+
     // create the columns objects
-    for(var columnIdx=0; columnIdx<cdaTable.metadata.length; columnIdx++) {
+    for(var columnIdx=0 ; columnIdx < cdaMetadata.length; columnIdx++) {
+        var cdaCol = cdaMetadata[columnIdx];
+
         // create a column object
-        col = {
-            id: cdaTable.metadata[columnIdx].colName,
-            type: cdaTable.metadata[columnIdx].colType.toLowerCase(),
-            label: cdaTable.metadata[columnIdx].colLabel
-        }
-        if(!col.label) {
-            col.label = col.id;
-        }
-        if(col.type == 'numeric') {
+        var col = {
+            id:    cdaCol.colName,
+            type:  cdaCol.colType.toLowerCase(),
+            label: cdaCol.colLabel || cdaCol.colName
+        };
+
+        if(col.type === 'numeric') {
             // convert 'numeric' to 'number' to be compatible with Google Charts
             col.type = 'number';
         }
+
         // add the column to the cols array
         cols.push(col);
     }
     
     // now add the rows
-    var cdaData = cdaTable.resultset;
-    for(var rowIdx=0; rowIdx<cdaData.length; rowIdx++) {
+    var cdaResultset = cdaTable.resultset;
+    for(var rowIdx=0, R = cdaResultset.length; rowIdx < R; rowIdx++) {
         // create a cells array
         var cells = [];
-        var cdaRow = cdaData[rowIdx];
-        for( columnIdx=0; columnIdx<cdaRow.length; columnIdx++ ) {
+        var cdaRow = cdaResultset[rowIdx];
+        for(columnIdx=0, C = cdaRow.length; columnIdx < C; columnIdx++) {
             // add a value to the cells array
             cells.push({
                 v: cdaRow[columnIdx]
             });
         }
-        var row = {
-            c: cells
-        };
+
         // add the row to the rows array
-        rows.push(row);
+        rows.push({c: cells});
     }
     
     // returns the finished object
-    return {
-        cols: cols,
-        rows: rows
-    };
-
-}
+    return {cols: cols, rows: rows};
+};
 
 /*
     Add Java classnames in select places so that this data table can be
@@ -129,14 +124,14 @@ pentaho.DataTable.prototype.makePostable = function() {
             }
         }
     }
-}
+};
 
 /*
     Returns the underlying JSON table
 */
 pentaho.DataTable.prototype.getJsonTable = function() {
     return this.jsonTable;
-}
+};
  
 /*
     getNumberOfColumns
@@ -144,7 +139,7 @@ pentaho.DataTable.prototype.getJsonTable = function() {
 */
 pentaho.DataTable.prototype.getNumberOfColumns = function() {
     return this.jsonTable.cols.length;
-}
+};
 
 /*
     getNumberOfRows
@@ -152,7 +147,7 @@ pentaho.DataTable.prototype.getNumberOfColumns = function() {
 */
 pentaho.DataTable.prototype.getNumberOfRows = function() {
     return this.jsonTable.rows.length;
-}
+};
 
 /*
     getColumnType
@@ -161,7 +156,7 @@ pentaho.DataTable.prototype.getNumberOfRows = function() {
 */
 pentaho.DataTable.prototype.getColumnType = function(columnIdx) {
     return this.jsonTable.cols[columnIdx].type;
-}
+};
 
 /*
     getColumnId
@@ -170,7 +165,7 @@ pentaho.DataTable.prototype.getColumnType = function(columnIdx) {
 */
 pentaho.DataTable.prototype.getColumnId = function(columnIdx) {
     return this.jsonTable.cols[columnIdx].id;
-}
+};
 
 /*
     getColumnLabel
@@ -179,7 +174,7 @@ pentaho.DataTable.prototype.getColumnId = function(columnIdx) {
 */
 pentaho.DataTable.prototype.getColumnLabel = function(columnIdx) {
     return this.jsonTable.cols[columnIdx].label;
-}
+};
 
 /*
     getValue
@@ -187,27 +182,21 @@ pentaho.DataTable.prototype.getColumnLabel = function(columnIdx) {
     rowIdx      The row number (zero based)
     returns     The value of the specified cell
 */
-pentaho.DataTable.prototype.getValue = function(rowIdx,columnIdx) {
-    if(!this.jsonTable.rows[rowIdx].c[columnIdx]){
-        return null;
-    }
-    if( this.jsonTable.rows[rowIdx].c[columnIdx].v !== undefined ) {
-        // we have a value field so return it
-        return this.jsonTable.rows[rowIdx].c[columnIdx].v;
-    } else {
-        return this.jsonTable.rows[rowIdx].c[columnIdx];
-    }
-}
+pentaho.DataTable.prototype.getValue = function(rowIdx, columnIdx) {
+    var cell = this.jsonTable.rows[rowIdx].c[columnIdx];
+    // If we have a value field return it
+    var v;
+    return !cell                      ? null :
+           (v = cell.v) !== undefined ? v    :
+           cell;
+};
 
 /*
     Returns the cell object
 */
-pentaho.DataTable.prototype._getCell = function(rowIdx,columnIdx) {
-    if(!this.jsonTable.rows[rowIdx].c[columnIdx]){
-        return null;
-    }
-    return this.jsonTable.rows[rowIdx].c[columnIdx];
-}
+pentaho.DataTable.prototype._getCell = function(rowIdx, columnIdx) {
+    return this.jsonTable.rows[rowIdx].c[columnIdx] || null;
+};
 
 
 /*
@@ -216,26 +205,15 @@ pentaho.DataTable.prototype._getCell = function(rowIdx,columnIdx) {
     rowIdx      The row number (zero based)
     returns     The formatted value of the specified cell
 */
-pentaho.DataTable.prototype.getFormattedValue = function(rowIdx,columnIdx) {
-    if( !this.jsonTable.rows[rowIdx].c[columnIdx] ) {
-        return null;
-    }
-    else if( this.jsonTable.rows[rowIdx].c[columnIdx].f !== undefined ) {
-        // we have a formatted value so return it
-        return this.jsonTable.rows[rowIdx].c[columnIdx].f;
-    } 
-    else if( this.jsonTable.rows[rowIdx].c[columnIdx].v !== undefined ) {
-        // we have a value field so return it
-        return this.jsonTable.rows[rowIdx].c[columnIdx].v;
-    } 
-    else if( this.jsonTable.rows[rowIdx].c[columnIdx].v == null ) {
-        // we have a null value field so return it
-        return null;
-    } 
-    else {
-        return this.jsonTable.rows[rowIdx].c[columnIdx];
-    }
-}
+pentaho.DataTable.prototype.getFormattedValue = function(rowIdx, columnIdx) {
+    var cell = this.jsonTable.rows[rowIdx].c[columnIdx];
+    if(!cell) { return null; }
+
+    var f, v;
+    return (f = cell.f) !== undefined ? f :
+           (v = cell.v) !== undefined ? v :
+           null;
+};
 
 /*
     getColumnRange
@@ -250,42 +228,28 @@ pentaho.DataTable.prototype.getFormattedValue = function(rowIdx,columnIdx) {
 */
 pentaho.DataTable.prototype.getColumnRange = function(columnIdx, options) {
 
-    var min;
-    var max;
+    var min, max;
     var set = false;
     var key = options && options.key;
-    
-    for( var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++ ) {
+    for(var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++) {
         // get the value from this row
-        var value = this.getValue( rowNo, columnIdx );
+        var value = this.getValue(rowNo, columnIdx);
         if(value != null) {
-            if(key){
-                value = key(value);
-            }
+            if(key) { value = key(value); }
             
             if(!set) {
                 min = value;
                 max = value;
                 set = true;
             } else {
-                if( value < min ) {
-                    min = value;
-                }
-                if( value > max ) {
-                    max = value;
-                }
+                if(value < min) { min = value; }
+                if(value > max) { max = value; }
             }
         }
     }
     
-    // return the range 
-    var range = {
-        min: min,
-        max: max
-    }
-    return range;
-
-}
+    return {min: min, max: max };
+};
 
 /*
     getDistinctValues
@@ -298,14 +262,14 @@ pentaho.DataTable.prototype.getDistinctValues = function(columnIdx) {
     var valueMap = {};
     var isNumber = this.getColumnType(columnIdx) == 'number';
     for( var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++ ) {
-        var value = isNumber ? this.getValue( rowNo, columnIdx ) : this.getFormattedValue( rowNo, columnIdx );
-        if( !valueMap[value] ) {
+        var value = isNumber ? this.getValue(rowNo, columnIdx) : this.getFormattedValue(rowNo, columnIdx);
+        if(!valueMap[value]) {
             valueMap[value] = true;
             values.push(value);
         }
     }
     return values;
-}
+};
 
 /*
     getDistinctFormattedValues
@@ -316,15 +280,15 @@ pentaho.DataTable.prototype.getDistinctValues = function(columnIdx) {
 pentaho.DataTable.prototype.getDistinctFormattedValues = function(columnIdx) {
     var values = [];
     var valueMap = {};
-    for( var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++ ) {
-        var value = this.getFormattedValue( rowNo, columnIdx );
-        if( !valueMap[value] ) {
+    for(var rowNo=0; rowNo < this.getNumberOfRows(); rowNo++) {
+        var value = this.getFormattedValue(rowNo, columnIdx);
+        if(!valueMap[value]) {
             valueMap[value] = true;
             values.push(value);
         }
     }
     return values;
-}
+};
 
 /*
     getFilteredRows
@@ -337,7 +301,7 @@ pentaho.DataTable.prototype.getDistinctFormattedValues = function(columnIdx) {
     view.setRows(rows)
     
     To combine France and Germany
-    var rows = dataTable.getFilteredRows({ column: 0, combine: [{values:['France','Germany']}] })
+    var rows = dataTable.getFilteredRows({ column: 0, combinations: [{values:['France','Germany']}] })
     var view = new pentaho.DataView( dataTable );
     view.setRows(rows)
     
@@ -348,14 +312,15 @@ pentaho.DataTable.prototype.getFilteredRows = function(filters) {
     var comboMap = {};
     for( var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++ ) { // check each row
         for( var filterNo=0; filterNo<filters.length; filterNo++ ) { // check each filter
-            if( filters[filterNo].value ) {
+            if(filters[filterNo].value) {
                 // this is a 'filter by value'
                 if( this.getValue( rowNo, filters[filterNo].column ) == filters[filterNo].value ) {
                     // this row passes the filter requirements, add the row number to the rows array
-                    rows.push( rowNo );
+                    rows.push(rowNo);
                 }
             }
-            if( filters[filterNo].combinations ) {
+
+            if(filters[filterNo].combinations) {
                 // this is a 'local combination of rows'
                 var value = this.getValue( rowNo, filters[filterNo].column );
                 var combinations = filters[filterNo].combinations;
@@ -385,7 +350,7 @@ pentaho.DataTable.prototype.getFilteredRows = function(filters) {
         }
     }
     return rows;
-}
+};
 
 /*
     setColumnProperty
@@ -396,10 +361,10 @@ pentaho.DataTable.prototype.getFilteredRows = function(filters) {
     value       The value of the property
 */
 pentaho.DataTable.prototype.setColumnProperty = function(columnIndex, name, value) {
-    if( columnIndex >= 0 && columnIndex < this.jsonTable.cols.length) {
+    if(columnIndex >= 0 && columnIndex < this.jsonTable.cols.length) {
         this.jsonTable.cols[columnIndex][name] = value;
     }
-}
+};
 
 /*
     getColumnProperty
@@ -411,11 +376,11 @@ pentaho.DataTable.prototype.setColumnProperty = function(columnIndex, name, valu
     Return      The value of the property
 */
 pentaho.DataTable.prototype.getColumnProperty = function(columnIndex, name) {
-    if( columnIndex >= 0 && columnIndex < this.jsonTable.cols.length) {
+    if(columnIndex >= 0 && columnIndex < this.jsonTable.cols.length) {
         return this.jsonTable.cols[columnIndex][name];
     }
     return null;
-}
+};
 
 /****************************************************
     pentaho.DataView
@@ -429,12 +394,12 @@ pentaho.DataTable.prototype.getColumnProperty = function(columnIndex, name) {
     Constructor
     dataTable:  A DataTable object to base this view on
 */
-pentaho.DataView = function( dataTable ) {
+pentaho.DataView = function(dataTable) {
     this.dataTable = dataTable;
     this.rows = null;
     this.columns = null;
     this.className = "pentaho.DataView";
-}
+};
 
 /*
     setRows
@@ -450,7 +415,7 @@ pentaho.DataView = function( dataTable ) {
 */
 pentaho.DataView.prototype.setRows = function(rows) {
     this.rows = rows;
-}
+};
 
 /*
     setColumns
@@ -466,7 +431,7 @@ pentaho.DataView.prototype.setRows = function(rows) {
 */
 pentaho.DataView.prototype.setColumns = function(columns) {
     this.columns = columns;
-}
+};
 
 /*
     getColumnRange
@@ -480,40 +445,27 @@ pentaho.DataView.prototype.setColumns = function(columns) {
                  with the value undefined.
 */
 pentaho.DataView.prototype.getColumnRange = function(columnIdx, options) {
-
-    var min;
-    var max;
+    var min, max;
     var set = false;
     var key = options && options.key;
     
-    for( var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++ ) {
-        var value = this.getValue( rowNo, columnIdx );
+    for(var rowNo = 0, R = this.getNumberOfRows(); rowNo < R; rowNo++) {
+        var value = this.getValue(rowNo, columnIdx);
         if(value != null) {
-            if(key){
-                value = key(value);
-            }
+            if(key) { value = key(value); }
             
             if(!set) {
                 min = value;
                 max = value;
                 set = true;
             } else {
-                if( value < min ) {
-                    min = value;
-                }
-                if( value > max ) {
-                    max = value;
-                }
+                if(value < min) { min = value; }
+                if(value > max) { max = value; }
             }
         }
     }
-    var range = {
-        min: min,
-        max: max
-    }
-    return range;
-
-}
+    return {min: min, max: max};
+};
 
 /*
     getDistinctValues
@@ -524,15 +476,15 @@ pentaho.DataView.prototype.getColumnRange = function(columnIdx, options) {
 pentaho.DataView.prototype.getDistinctValues = function(columnIdx) {
     var values = [];
     var valueMap = {};
-    for( var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++ ) {
-        var value = this.getValue( rowNo, columnIdx );
-        if( !valueMap[value] ) {
+    for(var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++) {
+        var value = this.getValue(rowNo, columnIdx);
+        if(!valueMap[value]) {
             valueMap[value] = true;
             values.push(value);
         }
     }
     return values;
-}
+};
 
 /*
     getDistinctFormattedValues
@@ -541,17 +493,17 @@ pentaho.DataView.prototype.getDistinctValues = function(columnIdx) {
     Returns     an array of the distinct formatted values from the specified column
 */
 pentaho.DataView.prototype.getDistinctFormattedValues = function(columnIdx) {
-    var values = [];
-    var valueMap = {};
-    for( var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++ ) {
-        var value = this.getFormattedValue( rowNo, columnIdx );
-        if( !valueMap[value] ) {
-            valueMap[value] = true;
-            values.push(value);
+    var labels = [];
+    var labelMap = {};
+    for(var rowNo=0; rowNo<this.getNumberOfRows(); rowNo++) {
+        var label = this.getFormattedValue(rowNo, columnIdx);
+        if(!labelMap[label]) {
+            labelMap[label] = true;
+            labels.push(label);
         }
     }
-    return values;
-}
+    return labels;
+};
 
 /*
     hideColumns
@@ -562,14 +514,17 @@ pentaho.DataView.prototype.getDistinctFormattedValues = function(columnIdx) {
 */
 pentaho.DataView.prototype.hideColumns = function(columns) {
     tmpCols = [];
-    for( var columnIdx=0; columnIdx < this.getNumberOfColumns(); columnIdx++ ) {
-        tmpCols.push( columnIdx );
+    
+    for(var columnIdx=0; columnIdx < this.getNumberOfColumns(); columnIdx++) {
+        tmpCols.push(columnIdx);
     }
-    for( var idx=columns.length-1; idx> -1; idx-- ) {
-        tmpCols.splice(columns[idx],1)
+    
+    for(var idx = columns.length-1; idx > -1; idx--) {
+        tmpCols.splice(columns[idx], 1)
     }
+
     this.columns = tmpCols;
-}
+};
 
 /*
     getNumberOfRows
@@ -577,7 +532,7 @@ pentaho.DataView.prototype.hideColumns = function(columns) {
 */
 pentaho.DataView.prototype.getNumberOfRows = function() {
     return this.rows == null ? this.dataTable.getNumberOfRows() : this.rows.length;
-}
+};
 
 /*
     getNumberOfColumns
@@ -585,7 +540,7 @@ pentaho.DataView.prototype.getNumberOfRows = function() {
 */
 pentaho.DataView.prototype.getNumberOfColumns = function() {
     return this.columns == null ? this.dataTable.getNumberOfColumns() : this.columns.length;
-}
+};
 
 /*
     getColumnId
@@ -594,7 +549,7 @@ pentaho.DataView.prototype.getNumberOfColumns = function() {
 */
 pentaho.DataView.prototype.getColumnId = function(columnIdx) {
     return this.columns == null ? this.dataTable.getColumnId(columnIdx) : this.dataTable.getColumnId(this.columns[columnIdx]);
-}
+};
 
 /*
     getColumnLabel
@@ -603,7 +558,7 @@ pentaho.DataView.prototype.getColumnId = function(columnIdx) {
 */
 pentaho.DataView.prototype.getColumnLabel = function(columnIdx) {
     return this.columns == null ? this.dataTable.getColumnLabel(columnIdx) : this.dataTable.getColumnLabel(this.columns[columnIdx]);
-}
+};
 
 /*
     getColumnType
@@ -612,7 +567,7 @@ pentaho.DataView.prototype.getColumnLabel = function(columnIdx) {
 */
 pentaho.DataView.prototype.getColumnType = function(columnIdx) {
     return this.columns == null ? this.dataTable.getColumnType(columnIdx) : this.dataTable.getColumnType(this.columns[columnIdx]);
-}
+};
 
 /*
     getValue
@@ -623,32 +578,32 @@ pentaho.DataView.prototype.getColumnType = function(columnIdx) {
 pentaho.DataView.prototype.getValue = function(rowNo, colNo) {
     var rowIdx = this.rows == null ? rowNo : this.rows[rowNo];
     var colIdx = this.columns == null ? colNo : this.columns[colNo];
-    if( rowIdx.length && rowIdx[0] == 'combine' ) {
+    if(rowIdx.length && rowIdx[0] == 'combine') {
         // this is a combined row
-
         var type = this.getColumnType(colNo);
-        var value 
-        for( var idx=0; idx<rowIdx[1].length; idx++ ) {
-            if( idx == 0 ) {
-                value = this.dataTable.getValue(rowIdx[1][idx], colIdx);
-            }
-            else if( type == 'string' ) {
-                value += ' + '+this.dataTable.getValue(rowIdx[1][idx], colIdx);
-            }
-            else if( type == 'number' ) {
-                value += this.dataTable.getValue(rowIdx[1][idx], colIdx);
+        var value;
+        var sourceRows = rowIdx[1];
+        for(var idx=0; idx < sourceRows.length; idx++) {
+            var sourceRowIdx = sourceRows[idx];
+            if(!idx) {
+                value = this.dataTable.getValue(sourceRowIdx, colIdx);
+            } else if(type == 'string') {
+                value += ' + ' + this.dataTable.getValue(sourceRowIdx, colIdx);
+            } else if(type == 'number') {
+                // Sum
+                value += this.dataTable.getValue(sourceRowIdx, colIdx);
             }
         }
         return value;
     }
     return this.dataTable.getValue(rowIdx, colIdx);
-}
+};
 
 pentaho.DataView.prototype._getCell = function(rowNo, colNo) {
     var rowIdx = this.rows == null ? rowNo : this.rows[rowNo];
     var colIdx = this.columns == null ? colNo : this.columns[colNo];
     return this.dataTable._getCell(rowIdx, colIdx);
-}
+};
 
 /*
     getFormattedValue
@@ -657,28 +612,27 @@ pentaho.DataView.prototype._getCell = function(rowNo, colNo) {
     returns     The formatted value of the specified cell
 */
 pentaho.DataView.prototype.getFormattedValue = function(rowNo, colNo) {
-    var rowIdx = this.rows == null ? rowNo : this.rows[rowNo];
+    var rowIdx = this.rows    == null ? rowNo : this.rows[rowNo];
     var colIdx = this.columns == null ? colNo : this.columns[colNo];
-    if( rowIdx.length && rowIdx[0] == 'combine' ) {
+    if(rowIdx.length && rowIdx[0] == 'combine') {
         // this is a combined row
-
         var type = this.getColumnType(colNo);
-        var value 
-        for( var idx=0; idx<rowIdx[1].length; idx++ ) {
-            if( idx == 0 ) {
+        var value;
+        for(var idx=0; idx < rowIdx[1].length; idx++) {
+            if(!idx) {
                 value = this.dataTable.getFormattedValue(rowIdx[1][idx], colIdx);
-            }
-            else if( type == 'string' ) {
-                value += ' + '+this.dataTable.getFormattedValue(rowIdx[1][idx], colIdx);
-            }
-            else if( type == 'number' ) {
+            } else if(type == 'string') {
+                value += ' + ' + this.dataTable.getFormattedValue(rowIdx[1][idx], colIdx);
+            } else if(type == 'number') {
+                // TODO: Summing the formatted values??
                 value += this.dataTable.getFormattedValue(rowIdx[1][idx], colIdx);
             }
         }
         return value;
     }
+
     return this.dataTable.getFormattedValue(rowIdx, colIdx);
-}
+};
 
 /*
     toDataTable
@@ -689,36 +643,27 @@ pentaho.DataView.prototype.getFormattedValue = function(rowNo, colNo) {
     Returns:    A DataTable
 */
 pentaho.DataView.prototype.toDataTable = function() {
-
     var cols = [];
-    for( var colIdx=0; colIdx<this.getNumberOfColumns(); colIdx++ ) {
-        col = {
-            type: this.getColumnType(colIdx),
-            id:  this.getColumnId(colIdx),
+    for(var colIdx=0; colIdx<this.getNumberOfColumns(); colIdx++) {
+        cols.push({
+            type:  this.getColumnType(colIdx),
+            id:    this.getColumnId(colIdx),
             label: this.getColumnLabel(colIdx)
-        }
-        cols.push(col);
+        });
     }
     
     var rows = [];
-    for( var rowIdx=0; rowIdx<this.getNumberOfRows(); rowIdx++ ) {
-        cells = [];
-        for( var colIdx=0; colIdx<this.getNumberOfColumns(); colIdx++ ) {
-            var cell = this._getCell(rowIdx, colIdx);
-            cells.push(cell);
+    for(var rowIdx=0; rowIdx<this.getNumberOfRows(); rowIdx++) {
+        var cells = [];
+        for(var colIdx=0; colIdx<this.getNumberOfColumns(); colIdx++) {
+            // TODO: Is there a problem to share the same cell objects?
+            cells.push(this._getCell(rowIdx, colIdx));
         }
-        row = {
-            c: cells
-        };
-        rows.push( row );
+        rows.push({c: cells});
     }
     
-    var json = { cols: cols, rows: rows };
-    
-    var table = new pentaho.DataTable(json);
-    return table;
-
-}
+    return new pentaho.DataTable({cols: cols, rows: rows});
+};
 
 /*
     setColumnProperty
@@ -730,7 +675,7 @@ pentaho.DataView.prototype.toDataTable = function() {
 */
 pentaho.DataView.prototype.setColumnProperty = function(columnIndex, name, value) {
     this.dataTable.setColumnProperty(columnIndex, name, value);
-}
+};
 
 /*
     getColumnProperty
