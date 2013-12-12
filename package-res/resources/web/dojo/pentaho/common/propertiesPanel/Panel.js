@@ -38,37 +38,48 @@ dojo.declare(
       captionTemplate: "<div class='caption'><span class='caption-text'>${ui.caption:i18n}&nbsp;&nbsp;</span><i class='captionIcon'></i></div>",
       seperatorTemplate: "<div class='propPanel-seperator'></div>",
       propUIs: [],
-      groups: {},
+      groups:  {},
+      handles: [],
       gutters: false,
       baseClass: "pentahoPropertiesPanel",
       minHeightDeviation: 0,
-      constructor:function (propertiesConfiguration) {
+
+      constructor: function (propertiesConfiguration) {
         this.configuration = propertiesConfiguration;
+        this.propUIs = [];
+        this.groups  = {};
+        this.handles = [];
       },
-      postCreate:function () {
+
+      postCreate: function () {
         dojo.forEach(this.configuration.items, dojo.hitch(this, "initializeItem"));
 
         //var placeholderPanel = new dijit.layout.ContentPane({region: "center", splitter: false});
         //this.domNode.appendChild(placeholderPanel.domNode);
         this.inherited(arguments);
       },
-      resize: function(){
+
+      resize: function() {
         this.minHeightDeviation = 0; // zero out adjustments
         this.inherited(arguments);
       },
-      initializeItem:function (item) {
-        if(item.ui.hidden){
+
+      initializeItem: function (item) {
+        if(item.ui.hidden) {
           return;
         }
+
         // Lookup class impl from map
         var layoutClass = pentaho.common.propertiesPanel.Panel.registeredTypes[item.ui.type];
         if (!layoutClass) {
           throw "No Properties Panel UI implementation found for " + item.ui.type;
         }
 
+        var outterThis = this;
+
         var propUi;
         // check to see if it's a factory class
-        if(layoutClass.create){
+        if(layoutClass.create) {
           propUi = layoutClass.create({model: item, propPanel: this});
         } else {
           propUi = new layoutClass({model: item, propPanel: this});
@@ -77,21 +88,20 @@ dojo.declare(
         var groupId = item.ui.group;
 
         // If the property is grouped, create the group or add it to the existing one.
-        if(groupId){
+        if(groupId) {
           var group = this.groups[groupId];
           var groupConfig = this.configuration.groups[item.ui.group];
-          if(!group && groupConfig){
+          if(!group && groupConfig) {
             var groupContents = document.createElement("div");
 
-            var outterThis = this;
             group = new dijit.TitlePane({
               title: pentaho.common.Messages.getString(groupConfig.title, groupConfig.title),
               content: groupContents,
               region: 'top',
               splitter: false
             });
-            dojo.connect(group, "resize", function(){
 
+            this.handles.push(dojo.connect(group, "resize", function() {
 
               var lastChild = dojo.coords(outterThis.domNode.children[outterThis.domNode.children.length-1]);
               var totalNumOfGroups = 0;
@@ -110,11 +120,13 @@ dojo.declare(
                   minHeightAdjustment += titleBarHeight;
                 }
               }
+
               dojo.forEach(outterThis.domNode.children, function(node){
                 if(!node.className.match(/dijitTitlePane/)){
                   totalNonGroupHeight += dojo.coords(node).h;
                 }
               });
+
               var panelHeight = dojo.coords(outterThis.domNode).h;
               // if(totalGroupHeight + totalNonGroupHeight < panelHeight - /*margins*/ 20){
               //   // plenty of space, make natural size
@@ -172,15 +184,16 @@ dojo.declare(
               //   group._splitterWidget.domNode.style.top = Math.min(parseInt(group._splitterWidget.domNode.style.top), (parseInt(group.domNode.style.top) + parseInt(group.domNode.style.height))) + "px";
               // });
 
-            });
+            }));
 
-            dojo.connect(group._wipeOut, "onEnd", function(){
+            this.handles.push(dojo.connect(group._wipeOut, "onEnd", function() {
               outterThis.resize();
-            });
+            }));
 
-            dojo.connect(group._wipeIn, "onEnd", function(){
+            this.handles.push(dojo.connect(group._wipeIn, "onEnd", function() {
               outterThis.resize();
-            });
+            }));
+
             this.groups[groupId] = group;
             this.domNode.appendChild(group.domNode);
           }
@@ -189,12 +202,12 @@ dojo.declare(
 
         // Items can request a separator to be inserted before themselves
 
-        if(item.ui.seperator){
+        if(item.ui.seperator) {
           targetNode.appendChild(dojo._toDom(this.seperatorTemplate));
         }
 
         // Items can have a caption. If specified, create and add it before the property UI component
-        if(item.ui.caption){
+        if(item.ui.caption) {
 
           var cap = dojo._toDom(dojo.string.substitute(this.captionTemplate, item, null,
               {
@@ -220,50 +233,67 @@ dojo.declare(
         // Route UI events to onPropertyChange
         this.setupEventHandling(propUi);
         this.propUIs.push(propUi);
-        this.connect(propUi, "onUIEvent", "onUIEvent");
-        dojo.addClass(propUi.domNode, "propPanelItem")
+
+        this.handles.push(
+          dojo.connect(propUi, "onUIEvent", dojo.hitch(this, "onUIEvent")));
+
+        dojo.addClass(propUi.domNode, "propPanelItem");
         targetNode.appendChild(propUi.domNode);
         this.resize();
-
       },
 
-      onUIEvent: function(type, args){
+      onUIEvent: function(type, args) {
       },
-      setupEventHandling: function(ui){
 
-        this.connect(ui, "onContextMenu", function(e){
-          this.onUIEvent("onContextMenu", {item: ui, args: [ui, e]});
-        });
-        this.connect(ui, "onClick", function(e){
-          this.onUIEvent("onClick", {item: ui, args: [ui, e]});
-        });
-        this.connect(ui, "onDblClick", function(e){
-          this.onUIEvent("onDblClick", {item: ui, args: [ui, e]});
-        });
+      setupEventHandling: function(ui) {
+        var outerThis = this;
+        this.handles.push(
+          dojo.connect(ui, "onContextMenu", function(e) {
+            outerThis.onUIEvent("onContextMenu", {item: ui, args: [ui, e]});
+          }),
+          dojo.connect(ui, "onClick", function(e) {
+            outerThis.onUIEvent("onClick", {item: ui, args: [ui, e]});
+          }),
+          dojo.connect(ui, "onDblClick", function(e) {
+            outerThis.onUIEvent("onDblClick", {item: ui, args: [ui, e]});
+          })
+        );
       },
 
       setConfiguration: function(configJson){
         this._setConfiguration(new pentaho.common.propertiesPanel.Configuration(configJson));
       },
-      _setConfiguration: function(config){
+      _setConfiguration: function(config) {
+        // Destroy
+        this.handles.forEach(dojo.disconnect);
         this.propUIs.forEach(function(widget){
           widget.destroyRecursive();
         });
+
+        // Create
         this.propUIs = [];
-        this.groups = {};
+        this.groups  = {};
+        this.handles = [];
         this.domNode.innerHTML = "";
         this.configuration = config;
         this.postCreate();
       },
+
       reload: function(){
         this._setConfiguration(this.configuration);
       },
+
       set: function(property, id, value){
         dojo.forEach(this.propUIs, function(prop){
           if(prop.model.id == id){
             prop.model.set(property, value);
           }
         })
+      },
+
+      destroy: function() {
+        this.handles.forEach(dojo.disconnect);
+        this.inherited(arguments);
       }
     }
 
@@ -279,7 +309,7 @@ dojo.declare(
         this.model = options.model;
         this.propPanel = options.propPanel;
         var outterThis = this;
-        this.model.watch(function(propName, prevVal, newVal){
+        this.modelHandle = this.model.watch(function(propName, prevVal, newVal){
 
           switch(propName){
             case "value":
@@ -289,8 +319,16 @@ dojo.declare(
           }
         });
       },
+
       onUIEvent: function(type, args){
 
+      },
+
+      destroyStateful: function() {
+        if(this.modelHandle) {
+          this.modelHandle.unwatch();
+          this.modelHandle = null;
+        }
       }
     }
 );
@@ -595,20 +633,19 @@ dojo.declare(
       widgetsInTemplate: true,
       templateString:"<div class='${className}' data-dojo-type='dijit.layout.BorderContainer' data-dojo-props='gutters:false'><div data-dojo-props='region:center'></div><div class='gemPlaceholder'><span>${placeholderText}</span></div></div>",
       gems: [],
-      handles: [],
-      subscriptions: [],
       accept: ["gem"],
       showPlaceholder: true,
       placeholderText: "Drop Level Here",
+
       constructor:function (options) {
         this.id = this.model.id+"_ui";
         this.showPlaceholder = this.model.ui.showPlaceholder;
         if(this.model.ui.placeholderText){
           this.placeholderText = this.model.ui.placeholderText;
         }
-
       },
-      postCreate: function(){
+
+      postCreate: function() {
         dojo.addClass(this.domNode, this.model.dataType); // add dataType as css class.
         this.gems = [];
         this.placeholder = dojo.query(".gemPlaceholder", this.domNode)[0];
@@ -619,11 +656,15 @@ dojo.declare(
 
         this.dropZoneNode = this.domNode.firstChild;
 
-        this.dropZone = new pentaho.common.propertiesPanel.GemBarUISource(this.dropZoneNode, {accept: this.model.ui.dndType, gemBar: this});
+        this.dropZone = new pentaho.common.propertiesPanel.GemBarUISource(
+            this.dropZoneNode,
+            {accept: this.model.ui.dndType, gemBar: this});
         // new pentaho.common.propertiesPanel.PlaceholderSource(this.domNode, {accept: this.model.ui.dndType, dropZone: this.dropZone});
 
         if(this.showPlaceholder && (this.model.allowMultiple || this.model.gems.length < 2) ){
-          new pentaho.common.propertiesPanel.PlaceholderSource(this.placeholder, {accept: this.model.ui.dndType, dropZone: this.dropZone});
+          new pentaho.common.propertiesPanel.PlaceholderSource(
+            this.placeholder,
+            {accept: this.model.ui.dndType, dropZone: this.dropZone});
 
 
           // dojo.connect(this.placeholder.firstChild, "onmouseover", function(event){
@@ -636,47 +677,42 @@ dojo.declare(
           // });
         }
 
-
-        var outterThis = this;
-
-        this.subscriptions.push(dojo.subscribe("/dnd/start", function(){
-          if(!outterThis.checkAcceptance(outterThis.dropZone, dojo.dnd.manager().nodes)){
-            dojo.addClass(outterThis.domNode, "dimished");
+        this.subscribe("/dnd/start", function() {
+          if(!this.checkAcceptance(this.dropZone, dojo.dnd.manager().nodes)) {
+            dojo.addClass(this.domNode, "dimished");
           }
-        }));
-        var unSubscribeFunc = function(){
-          if(outterThis.domNode){ // may have been disposed
-            dojo.removeClass(outterThis.domNode, "dimished");
+        });
+
+        var unSubscribeFunc = function() {
+          if(this.domNode) { // may have been disposed
+            dojo.removeClass(this.domNode, "dimished");
           }
         };
-        this.subscriptions.push(dojo.subscribe("/dnd/cancel", unSubscribeFunc));
-        this.subscriptions.push(dojo.subscribe("/dnd/drop", unSubscribeFunc));
+        this.subscribe("/dnd/cancel", unSubscribeFunc);
+        this.subscribe("/dnd/drop",   unSubscribeFunc);
 
 
-        dojo.connect(this.domNode, "onmouseover", function(event){
-          if(dojo.dnd.manager().source && outterThis.checkAcceptance(outterThis.dropZone, dojo.dnd.manager().nodes)){
-            dojo.addClass(outterThis.domNode, "over");
+        this.connect(this.domNode, "onmouseover", function(event) {
+          if(dojo.dnd.manager().source && this.checkAcceptance(this.dropZone, dojo.dnd.manager().nodes)){
+            dojo.addClass(this.domNode, "over");
           }
         });
-        dojo.connect(this.domNode, "onmouseout", function(event){
-          dojo.removeClass(outterThis.domNode, "over");
+        this.connect(this.domNode, "onmouseout", function(event) {
+          dojo.removeClass(this.domNode, "over");
         });
-        dojo.connect(this.domNode, "onmouseup", function(event){
-          dojo.removeClass(outterThis.domNode, "over");
+        this.connect(this.domNode, "onmouseup", function(event) {
+          dojo.removeClass(this.domNode, "over");
         });
 
-
-
-
-        // this.handles.push[dojo.connect(this.dropZone, "onDrop", this, "onDrop")];
-        this.handles.push[dojo.connect(this.dropZone, "createDropIndicator", this, "createDropIndicator")];
-        this.handles.push[dojo.connect(this.dropZone, "placeDropIndicator", this, "placeDropIndicator")];
-        this.handles.push[dojo.connect(this.dropZone, "onMouseOver", this, "onMouseOver")];
-        this.handles.push[dojo.connect(this.dropZone, "onMouseOut", this, "onMouseOut")];
-        this.handles.push[dojo.connect(this.dropZone, "onDraggingOver", this, "onDraggingOver")];
-        this.handles.push[dojo.connect(this.dropZone, "onDraggingOver", this, "onDraggingOut")];
-        // this.handles.push[dojo.connect(this.dropZone, "checkAcceptance", this, "checkAcceptance")];
-        this.handles.push[dojo.connect(this.dropZone, "insertNodes", this, "insertNodes")];
+        // this.connect(this.dropZone, "onDrop", "onDrop");
+        this.connect(this.dropZone, "createDropIndicator", "createDropIndicator");
+        this.connect(this.dropZone, "placeDropIndicator", "placeDropIndicator");
+        this.connect(this.dropZone, "onMouseOver", "onMouseOver");
+        this.connect(this.dropZone, "onMouseOut", "onMouseOut");
+        this.connect(this.dropZone, "onDraggingOver", "onDraggingOver");
+        this.connect(this.dropZone, "onDraggingOver", "onDraggingOut");
+        // this.connect(this.dropZone, "checkAcceptance", "checkAcceptance");
+        this.connect(this.dropZone, "insertNodes", "insertNodes");
 
         dojo.forEach(this.model.gems, function(gem){
           var uiClass = pentaho.common.propertiesPanel.Panel.registeredTypes["gem"];
@@ -692,12 +728,13 @@ dojo.declare(
         }, this);
         this.dropZone.sync();
         this.inherited(arguments);
-
       },
+
       insertNodes: function(addSelected, data, before, anchor) {
         //this.domNode.appendChild(data[0]);
         this.onUIEvent("insertNodes", {item: this, args: arguments});
       },
+
       add: function(gemUI){
         gemUI.model.gemBar = this.model;
         this.gems.push(gemUI);
@@ -727,7 +764,7 @@ dojo.declare(
         }
 
         if(this.model.required){
-          dojo.removeClass(this.placeholder, "reqiured");
+          dojo.removeClass(this.placeholder, "reqiured"); // TODO: what is this??
         }
 
       },
@@ -761,7 +798,6 @@ dojo.declare(
       },
       onDraggingOver:function () {
         return this.inherited(arguments);
-
       },
       onDraggingOut: function(){
 
@@ -778,7 +814,6 @@ dojo.declare(
         this.propPanel.setupEventHandling(gemUI);
       },
 
-
       /* extension points */
       validateGem:function (gem) {
         return true;
@@ -791,16 +826,18 @@ dojo.declare(
       },
       destroyRecursive: function(){
         this.inherited(arguments);
+
         // destroyRecursive should do this, investigate
-        dojo.forEach(this.gems, function(gem){
+        dojo.forEach(this.gems, function(gem) {
           gem.destroy();
         });
+
         this.destroy();
-        dojo.forEach(this.handles, dojo.disconnect);
       },
-      destroy: function(){
-        dojo.forEach(this.subscriptions, dojo.unsubscribe);
+
+      destroy: function() {
         this.inherited(arguments);
+        this.destroyStateful();
       }
     }
 );
@@ -814,50 +851,59 @@ dojo.declare(
       className: "gem",
 
       templateString: "<div id='${id}' class='${className} dojoDndItem' dndType='${dndType}'><div class='gem-label'>${model.value}</div><div class='gemMenuHandle'></div></div>",
+
       constructor:function (options) {
         this.gemBar = options.gemBar;
         this.dndType = options.dndType;
         this.id = options.id;
-
       },
-      detach: function(){
+
+      detach: function() {
         model.detach();
       },
-      postCreate: function(){
-        dojo.connect(this.domNode, "oncontextmenu", this, "onContextMenu");
-        var outterThis = this;
+
+      postCreate: function() {
+        this.connect(this.domNode, "oncontextmenu", "onContextMenu");
+
         this.menuHandle = dojo.query("div.gemMenuHandle", this.domNode)[0];
 
-        dojo.connect(dojo.query("div.gemMenuHandle", this.domNode)[0], "onmouseover", function(e){
-          if(!dojo.dnd.manager().source){
+        this.connect(dojo.query("div.gemMenuHandle", this.domNode)[0], "onmouseover", function(e) {
+          if(!dojo.dnd.manager().source) {
             dojo.addClass(e.target, "over");
           }
         });
-        dojo.connect(dojo.query("div.gemMenuHandle", this.domNode)[0], "onmouseout", function(e){
-          if(!dojo.dnd.manager().source){
+        this.connect(dojo.query("div.gemMenuHandle", this.domNode)[0], "onmouseout", function(e) {
+          if(!dojo.dnd.manager().source) {
             dojo.removeClass( e.target, "over");
           }
         });
-        dojo.connect(this.menuHandle, "onclick", this, "onContextMenu");
+        this.connect(this.menuHandle, "onclick", "onContextMenu");
 
-        dojo.connect(this.domNode, "onmouseover", this, "onMouseOver");
-        dojo.connect(this.domNode, "onmouseout", this, "onMouseOut");
+        this.connect(this.domNode, "onmouseover", "onMouseOver");
+        this.connect(this.domNode, "onmouseout", "onMouseOut");
+
         this.inherited(arguments);
       },
+
       onMouseOver: function(){
         if(!dojo.dnd.manager().source){
           dojo.addClass(this.domNode, "over");
         }
       },
+
       onMouseOut: function(){
         dojo.removeClass(this.domNode, "over");
       },
-
 
       // to be overwritten by container
       onContextMenu: function(e){
         console.log("inner onContextMenu");
         //dojo.stopEvent(e);
+      },
+
+      destroy: function() {
+        this.inherited(arguments);
+        this.destroyStateful();
       }
     }
 );
@@ -872,7 +918,7 @@ dojo.declare(
       options: [],
       widgetsInTemplate: false,
       templateString: "<div class='${className}' id='${model.id}_wrapper'></div>",
-      handles: [],
+
       constructor:function (options) {
         this.name = options.id;
         this.options = [];
@@ -891,7 +937,7 @@ dojo.declare(
         this.value = this.model.value;
       },
 
-      postCreate: function(){
+      postCreate: function() {
         var me = this;
         var opts = this.options;
         dojo.forEach(opts, function(val, idx) {
@@ -922,10 +968,10 @@ dojo.declare(
 
 
           this.domNode.appendChild(selectBox);
-          this.handles.push(dojo.connect(selectBox, "onchange", function() {
-            me.model.set('value', this.value);
-            me.value = this.value;
-          }));
+          this.connect(selectBox, "onchange", function() {
+            this.model.set('value', this.value);
+            this.value = this.value;
+          });
 
         } else {
 
@@ -953,10 +999,9 @@ dojo.declare(
       },
 
       destroy: function() {
-        dojo.forEach(this.handles, dojo.disconnect);
         this.inherited(arguments);
+        this.destroyStateful();
       }
-
     }
 );
 
@@ -972,6 +1017,7 @@ dojo.declare(
       style: "width: 100%",
       intermediateChanges: true,
       discreteValues: true,
+
       constructor:function (options) {
         this.inherited(arguments);
         this.value = this.model.value;
@@ -984,8 +1030,14 @@ dojo.declare(
         this.discreteValues = this.maximum -this.minimum+1;
         this.id = this.model.id+"_slider";
       },
+
       onChange: function(){
         this.model.set('value', this.value);
+      },
+
+      destroy: function() {
+        this.inherited(arguments);
+        this.destroyStateful();
       }
     }
 );
@@ -1003,6 +1055,11 @@ dojo.declare(
       },
       onChange: function(){
         this.model.set('value', this.value);
+      },
+
+      destroy: function() {
+        this.inherited(arguments);
+        this.destroyStateful();
       }
     }
 );
@@ -1017,7 +1074,7 @@ dojo.declare(
       widgetsInTemplate: true,
       value : false,
       templateString: "<div class='${className}'><input id='${model.id}_checkbox' name='${model.id}_checkbox' dojoType='dijit.form.CheckBox' /> <label for='${model.id}_checkbox'>${label}</label></div>",
-      handles: [],
+
       constructor:function (options) {
         if(this.model.value){
           this.value = this.model.value;
@@ -1026,9 +1083,9 @@ dojo.declare(
         }
         this.label = pentaho.common.Messages.getString(this.model.ui.label,this.model.ui.label);
       },
-      postCreate: function(){
+
+      postCreate: function() {
         this.checkbox = dijit.byId(this.model.id+"_checkbox");
-        var outterThis = this;
 
         // ANALYZER-1040, IE checkbox issues force us to set the checked status here rather than in the templateString
         if(typeof(this.value) != 'boolean') {
@@ -1036,26 +1093,25 @@ dojo.declare(
         }
         this.checkbox.attr('checked', this.value);
 
-        this.handles.push(dojo.connect(this.checkbox, "onChange", function(){
-          if(outterThis.model.value != outterThis.checkbox.checked){
-            outterThis.model.set('value', outterThis.checkbox.checked);
+        this.connect(this.checkbox, "onChange", function() {
+          if(this.model.value != this.checkbox.checked) {
+            this.model.set('value', this.checkbox.checked);
           }
-        }));
+        });
       },
-      set: function(prop, newVal){
-        if(this.checkbox){
-          if(prop == "value" && newVal != this.checkbox.checked){
+      set: function(prop, newVal) {
+        if(this.checkbox) {
+          if(prop == "value" && newVal != this.checkbox.checked) {
             this.checkbox.set(prop, newVal);
           }
         }
-
       },
-      onChange: function(){
-
+      onChange: function() {
       },
+
       destroy: function() {
-        dojo.forEach(this.handles, dojo.disconnect);
         this.inherited(arguments);
+        this.destroyStateful();
       }
     }
 );
@@ -1081,6 +1137,11 @@ dojo.declare(
 
       onClick: function(){
         this.model.set('clicked', true);
+      },
+
+      destroy: function() {
+        this.inherited(arguments);
+        this.destroyStateful();
       }
     }
 );
