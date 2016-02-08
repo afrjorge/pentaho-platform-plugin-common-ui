@@ -57,14 +57,11 @@
 define(['cdf/components/BaseComponent', "dojo/date/locale", 'dijit/form/DateTextBox', 'dijit/registry', 'amd!cdf/lib/jquery.ui', 'css!./DojoDateTextBoxComponent.css'],
     function (BaseComponent, locale, DateTextBox, registry, $) {
 
-      return BaseComponent.extend({
+      return BaseComponent.extend(/** @lends DojoDateTextBoxComponent# */{
         localeFormatter: locale,
 
         /**
          * Clears the widget from the dojo namespace
-         *
-         * @method
-         * @name DojoDateTextBoxComponent#clear
          */
         clear: function () { 
           if(this.onChangeHandle) {
@@ -93,9 +90,6 @@ define(['cdf/components/BaseComponent', "dojo/date/locale", 'dijit/form/DateText
 
         /**
          * Renders the Dojo Date Text Box Component
-         *
-         * @method
-         * @name DojoDateTextBoxComponent#update
          */
         update: function () {
           if(this.dijitId == undefined) {
@@ -163,9 +157,6 @@ define(['cdf/components/BaseComponent', "dojo/date/locale", 'dijit/form/DateText
 
         /**
          * Returns the value assigned to the component
-         *
-         * @method
-         * @name DojoDateTextBoxComponent#getValue
          *
          * @returns {String} The date picked, parsed using the common-ui formatters
          */
@@ -254,6 +245,7 @@ define(['cdf/components/BaseComponent', "dojo/date/locale", 'dijit/form/DateText
          * Returns the current date format
          *
          * @private
+         * @returns {String} The date format
          */
         _getDateFormat: function() {
           if (this.dateFormat) {

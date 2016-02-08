@@ -60,7 +60,7 @@ define(['./builders/PromptPanelBuilder', './builders/ParameterGroupPanelBuilder'
               MultiButtonBuilder, ListBuilder, DateInputBuilder, ExternalInputBuilder, TextAreaBuilder,
               TextInputBuilder) {
 
-      return {
+      return/** @lends WidgetBuilder# */{
         /**
          * the mappings of the builders names and their objects
          */
@@ -87,8 +87,6 @@ define(['./builders/PromptPanelBuilder', './builders/ParameterGroupPanelBuilder'
         /**
          * Gets the builder from the mapping for a given type
          *
-         * @name WidgetBuilder#_findBuilderFor
-         * @method
          * @param {Object} args The arguments to call the builder
          * @param {String} type The type of the builder to get
          * @returns {ParameterWidgetBuilderBase}
@@ -102,8 +100,6 @@ define(['./builders/PromptPanelBuilder', './builders/ParameterGroupPanelBuilder'
         /**
          * Builds the widget and returns a component
          *
-         * @name WidgetBuilder#build
-         * @method
          * @param {Object} args The arguments to call the builder
          * @param {String} type The type of the builder to get
          * @returns {BaseComponent} The CDF component built

@@ -82,7 +82,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
        *
        * @name PromptPanel#_createWidgetForParameter
        * @method
-       * @param param {Parameter} The param to be created
+       * @param {Parameter} param The param to be created
        * @returns {Object} A widget for the given parameter
        * @private
        */
@@ -137,7 +137,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
        * @name PromptPanel#_createWidgetForParameterPanel
        * @method
        * @param {Parameter} param The param definition
-       * @param {Array|BaseComponent} components The Array of components to add to the Group Panel
+       * @param {BaseComponent[]} components The Array of components to add to the Group Panel
        * @returns {BaseComponent} The Widget for the Parameter Panel
        * @private
        */
@@ -154,7 +154,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
        * @name PromptPanel#_createWidgetForGroupPanel
        * @method
        * @param {ParameterGroup} group The group definition
-       * @param {Array|BaseComponent} components The Array of components to add to the Group Panel
+       * @param {BaseComponent[]} components The Array of components to add to the Group Panel
        * @returns {BaseComponent} The Widget for the Group Panel
        * @private
        */
@@ -199,7 +199,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
        *
        * @name PromptPanel#_mapComponents
        * @method
-       * @param {BaeComponent} component The component to iterate
+       * @param {BaseComponent} component The component to iterate
        * @param {callback~cb} callback The callback to call on each component
        * @private
        */
@@ -215,8 +215,9 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
        *
        * @name PromptPanel#_mapComponentsList
        * @method
-       * @param {Array|BaseComponent} components The list of components to iterate
+       * @param {BaseComponent[]} components The list of components to iterate
        * @param {callback~cb} callback The callback to call on each component
+       * @private
        */
       function _mapComponentsList(components, callback) {
         $.each(components, function(i, component) {
@@ -227,13 +228,13 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
       /**
        * Gets a component by its parameter definition.
        *
-       * @name _getComponentByParam
+       * @name PromptPanel#_getComponentByParam
        * @method
        * @private
        * @param {ParameterDefinition} param
-       * @param {bool} getPanel If true, retrieves the surrounding panel for the component
+       * @param {Boolean} getPanel If true, retrieves the surrounding panel for the component
        *
-       * @returns {BaseComponent|null} If no component is found, null will be returned
+       * @returns {?BaseComponent} If no component is found, null will be returned
        */
       var _getComponentByParam = function(param, getPanel) {
         var parameterName = this.getParameterName(param);
@@ -243,13 +244,13 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
       /**
        * Gets a component by its compile parameter name. Normally, it is a combination of the parameter name and the guid of the PromptPanel.
        *
-       * @name _getComponentByParamName
+       * @name PromptPanel#_getComponentByParamName
        * @method
        * @private
        * @param {String} parameterName The compiled name of the prompt panel component
-       * @param {bool} getPanel If true, retrieves the surrounding panel for the component
+       * @param {Boolean} getPanel If true, retrieves the surrounding panel for the component
        *
-       * @returns {BaseComponent|null} If no component is found, null will be returned
+       * @returns {?BaseComponent} If no component is found, null will be returned
        */
       var _getComponentByParamName = function(parameterName, getPanel) {
         for (var i in this.dashboard.components) {
@@ -267,10 +268,10 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
       /**
        * Recursively adds the component and its children to the current dashboard
        *
-       * @name _addComponent
+       * @name PromptPanel#_addComponent
        * @method
        * @private
-       * @param {Array} component The parent component, which is added before its children
+       * @param {BaseComponent} component The parent component, which is added before its children
        */
       var _addComponent = function(component) {
         this.dashboard.addComponent(component);
@@ -283,10 +284,12 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
 
       /**
        * Finds the specific submit component located on the parent panel component
-       * @name _findSubmitComponent
+       *
+       * @name PromptPanel#_findSubmitComponent
        * @method
        * @private
        * @param {BaseComponent} panelComponent The parent panel component to search within for the submit component
+       * @returns {?SubmitComponent} The Submit component or null if no component was found.
        */
       var _findSubmitComponent = function(panelComponent) {
         var result = null;
@@ -301,8 +304,9 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
       };
 
       /**
-       * Finds error's components are located on the parent panel component
-       * @name _findErrorComponents
+       * Finds error components located in the parent panel component.
+       *
+       * @name PromptPanel#_findErrorComponents
        * @method
        * @private
        * @returns {Array} The array of error's components
@@ -319,7 +323,8 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
 
       /**
        * Removes a component from parent panel
-       * @name _removeChildComponent
+       *
+       * @name PromptPanel#_removeChildComponent
        * @method
        * @private
        * @param {BaseComponent} parent The parent component that has array of child components
@@ -334,13 +339,14 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
 
       /**
        * Compares the parameter value to its stored value
-       * @name _areParamsDifferent
+       *
+       * @name PromptPanel#_areParamsDifferent
        * @method
        * @private
        * @param {String|Date|Number} paramValue The stored parameter value
        * @param {String|Date|Number} paramSelectedValue The value of the selected parameter
        * @param {String} paramType The parameter type
-       * @returns {bool} The result of comparison
+       * @returns {Boolean} The result of the comparison.
        */
       var _areParamsDifferent = function(paramValue, paramSelectedValue, paramType) {
         if (paramValue && paramSelectedValue) {
@@ -453,7 +459,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         _validateStatePage(state.page, paramDefn.paginate, paramDefn.totalPages);
       };
 
-      var PromptPanel = Base.extend({
+      var PromptPanel = Base.extend(/** @lends PromptPanel# */{
 
         guid: undefined,
         paramDefn: undefined,
@@ -474,8 +480,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * Constructor for the PromptPanel
          * Override to the Base constructor
          *
-         * @name PromptPanel#constructor
-         * @method
          * @param {String} destinationId The html id to place the prompt
          * @param {ParameterDefinition} paramDefn The parameter definition assigned to the prompt
          */
@@ -487,8 +491,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
           /**
            * The html id destination where the prompt will be rendered
            *
-           * @name PromptPanel#destinationId
-           * @type String
+           * @type {String}
            * @default undefined
            */
           this.destinationId = destinationId;
@@ -530,7 +533,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
 
         /**
          * Sets the parameter definition for the prompt panel. Also sets whether the prompt panel has auto submit
-         * @param paramDefn {Object} The parameter definition object
+         * @param {Object} paramDefn The parameter definition object
          */
         setParamDefn: function(paramDefn) {
           var prevParamDefn = this.paramDefn;
@@ -566,7 +569,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Sets the autoSubmit property on the PromptPanel
          *
-         * @param autoSubmit {Boolean} The autoSubmit boolean
+         * @param {Boolean} autoSubmit The autoSubmit boolean
          */
         setAutoSubmit: function(autoSubmit) {
           var prevVal = this.autoSubmit;
@@ -580,8 +583,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Get the current auto submit setting for this panel.
          *
-         * @name PromptPanel#getAutoSubmitSetting
-         * @method
          * @returns {Boolean}
          */
         getAutoSubmitSetting: function () {
@@ -591,8 +592,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Get a localized string for this prompt panel.
          *
-         * @name PromptPanel#getString
-         * @method
          * @param {String} key The key
          * @param {String} defaultString The default value
          *
@@ -605,8 +604,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Returns a parameter name unique to this parameter panel.
          *
-         * @name PromptPanel#getParameterName
-         * @method
          * @param {Parameter} parameter The parameter
          * @returns {String} The parameter name
          */
@@ -621,8 +618,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * Returns a map of parameter name value. This will extract the current parameter value from the dashboard
          * instance as necessary
          *
-         * @name PromptPanel#getParameterValues
-         * @method
          * @returns {Object} parameters The parameters name|value pair assigned to the dashboard instance
          */
         getParameterValues: function () {
@@ -666,8 +661,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Generate a unique GUID for a widget of this panel.
          *
-         * @name PromptPanel#generateWidgetGUID
-         * @method
          * @returns {String} The join of the guid of the prompt with a new one generated by the GUIDHelper
          */
         generateWidgetGUID: function () {
@@ -675,10 +668,8 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         },
 
         /**
-         * Sets the parameter value in Dashboards' parameter map to a properly initialized value.
+         * Sets the parameter value in the dashboard parameter map to a properly initialized value.
          *
-         * @name PromptPanel#_initializeParameterValue
-         * @method
          * @param {ParameterDefinition} paramDefn The parameter definition map
          * @param {Parameter} param The parameter name
          * @private
@@ -696,8 +687,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Sets the parameter value in the dashboard instance parameter map
          *
-         * @name PromptPanel#setParameterValue
-         * @method
          * @param {Parameter} param The name of the parameter
          * @param {Object} value The value of the parameter
          */
@@ -708,8 +697,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Gets the parameter value from the dashboard instance parameter map
          *
-         * @name PromptPanel#getParameterValue
-         * @method
          * @param {Parameter} param The parameter name
          * @returns {Object} The parameter value stored in the dashboard instance
          */
@@ -724,8 +711,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Called by the prompt-panel component when the CDE components have been updated.
          *
-         * @name PromptPanel#_ready
-         * @method
          * @private
          */
         _ready: function () {
@@ -736,8 +721,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * Called when the prompt-panel component's submit button is clicked or auto-submit is enabled and a parameter
          * value changes.
          *
-         * @name PromptPanel#_submit
-         * @method
          * @param {Object}  [options]        Additional configuration options.
          * @param {Boolean} [options.isInit] Flag indicating if submit is being executed during initialization.
          * @private
@@ -749,8 +732,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Called when the prompt-panel component's submit button is pressed (mouse-down only).
          *
-         * @name PromptPanel#_submitStart
-         * @method
          * @private
          */
         _submitStart: function () {
@@ -760,8 +741,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Called by the prompt-panel component when the CDE components have been updated.
          *
-         * @name PromptPanel#ready
-         * @method
          * @param {PromptPanel} promptPanel
          */
         ready: function (promptPanel) {
@@ -771,8 +750,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * Called when the prompt-panel component's submit button is clicked or auto-submit is enabled and a parameter
          * value changes.
          *
-         * @name PromptPanel#submit
-         * @method
          * @param {PromptPanel} promptPanel  A prompt panel whose settings should be used for configuration purposes.
          * @param {Object}  [options]        Additional configuration options.
          * @param {Boolean} [options.isInit] Flag indicating if submit is being executed during initialization.
@@ -791,8 +768,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Called when the prompt-panel component's submit button is pressed (mouse-down only).
          *
-         * @name PromptPanel#submitStart
-         * @method
          * @param {PromptPanel} promptPanel
          */
         submitStart: function (promptPanel) {
@@ -806,8 +781,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * that have a "parameter".
          * This method calls its PromptPanel's "parameterChanged" method.
          *
-         * @name PromptPanel#parameterChanged
-         * @method
          * @param {Parameter} param
          * @param {String} name
          * @param {Object} value
@@ -845,8 +818,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          /**
          * Method called to sync the refresh of the prompt with the renderer calling a setTimeout 0
          *
-         * @name PromptPanel#_setTimeoutRefreshPrompt
-         * @method
          * @private
          *
          */
@@ -863,8 +834,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * This method should be overridden.
          * The default implementation simply calls the provided callback with no parameter definition.
          *
-         * @name PromptPanel#getParameterDefinition
-         * @method
          * @param {PromptPanel} promptPanel the panel that needs a new parameter definition
          * @param {Function} callback function to call when the parameter definition has been fetched.
          *
@@ -878,7 +847,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * Called to refresh the prompt panel. This will invoke getParameterDefinition() to get a new parameter definition.
          * If the new parameter definition is undefined (default impl) no re-initialization will be done.
          *
-         * @name PromptPanel#refreshPrompt
          * @param {Boolean} isForceRefresh The flag indicates ability to update all components regardless of the difference previos and new xml from server
          * @method
          */
@@ -896,8 +864,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Refreshes the prompt panel with a given parameter definition.
          *
-         * @name PromptPanel#refresh
-         * @method
          * @param {ParameterDefinition} paramDefn the parameter definition used to refresh the prompt panel.
          * When unspecified, nothing is done.
          * @param {Boolean} noAutoAutoSubmit Prevents auto-submiting, even when auto-submit is false,
@@ -969,8 +935,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Removes a set of components determined by the ParameterDefinitionDiffer#diff
          *
-         * @name PromptPanel#_removeComponentsByDiff
-         * @method
          * @param {JSON} toRemoveDiff The group of paramters which need to be removed
          */
         _removeComponentsByDiff: function(toRemoveDiff) {
@@ -1025,8 +989,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Adds a set of components determined by the ParameterDefinitionDiffer#diff
          *
-         * @name PromptPanel#_addComponentsByDiff
-         * @method
          * @param {JSON} toAddDiff The group of parameters which need to be added
          */
         _addComponentsByDiff: function(toAddDiff) {
@@ -1079,8 +1041,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Change error's components determined by the ParameterDefinitionDiffer#diff
          *
-         * @name PromptPanel#_changeErrors
-         * @method
          * @param {Parameter} param The parameter
          * @private
          */
@@ -1140,8 +1100,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Changes the data and selects the current value(s) of a set of components determined by the ParameterDefinitionDiffer#diff.
          *
-         * @name PromptPanel#_changeComponentsByDiff
-         * @method
          * @param {JSON} toChangeDiff The group of parameters which need to be have their data changed
          */
         _changeComponentsByDiff: function(toChangeDiff) {
@@ -1213,7 +1171,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Updates the dashboard and prompt panel based off of differences in the parameter definition
          *
-         * @method update
          * @param {JSON} diff - contains the differences between the old and new parameter definitions produced by ParameterDefinitionDiffer.diff
          */
         update: function(diff) {
@@ -1249,8 +1206,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * Initialize this prompt panel.
          * This will create the components and pass them to CDF to be loaded.
          *
-         * @name PromptPanel#init
-         * @method
          * @param {Boolean} noAutoAutoSubmit Prevents auto-submiting, even when auto-submit is false,
          * in the case the the parameter UI is not shown.
          */
@@ -1376,9 +1331,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
 
         /**
          * Hides this instance of PromptPanel
-         *
-         * @name PromptPanel#hide
-         * @method
          */
         hide: function () {
           $('#' + this.destinationId).css('display', 'none');
@@ -1388,8 +1340,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
          * Creates a panel for a parameter
          * If no widget for the parameter is created this method returns null
          *
-         * @name PromptPanel#_buildPanelForParameter
-         * @method
          * @param {Parameter} param
          * @returns {BaseComponent} The panel parameter. It returns undefined if the panel is not created
          * @private
@@ -1433,8 +1383,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Creates a Widget for the Submit Component
          *
-         * @name PromptPanel#createWidgetForSubmitComponent
-         * @method
          * @returns {BaseComponent}
          */
         createWidgetForSubmitComponent: function() {
@@ -1444,9 +1392,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Builds the Panel and its components for the parameters
          *
-         * @name PromptPanel#buildPanelComponents
-         * @method
-         * @returns {Array|BaseComponents}
+         * @returns {BaseComponents[]}
          */
         buildPanelComponents: function () {
           var panelGroupComponents = [];
@@ -1479,9 +1425,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Removes all components from the current instance of dashboard
          *
-         * @name PromptPanel#removeDashboardComponents
-         * @method
-         * @param {Array|BaseComponent} components The list of components to be removed
+         * @param {BaseComponent[]} components The list of components to be removed
          * @param {Boolean} postponeClear
          */
         removeDashboardComponents: function (components, postponeClear) {
@@ -1499,7 +1443,7 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
           // Remove references to each removed components parameter but leave the parameter so it may be reselected if it's reused by
           // another component
           $.each(removed, function (i, component) {
-            // It would be wise to always call component.clear() here except that since Dashboards.init() schedules the components
+            // It would be wise to always call component.clear() here except that since dashboard.init() schedules the components
             // to update() in a setTimeout(). To prevent that, we'll clear the removed components with the GarbageCollectorComponent
             // when we initialize the next set of components.
             if (!postponeClear) {
@@ -1525,9 +1469,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
 
         /**
          * Makes visible the progress indicator by calling the function Dashboard#showProgressIndicator.
-         *
-         * @name PromptPanel#showProgressIndicator
-         * @method
          */
         showProgressIndicator: function() {
           this.getDashboard().showProgressIndicator();
@@ -1535,9 +1476,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
 
         /**
          * Hides the progress indicator by calling the function Dashboard#hideProgressIndicator.
-         *
-         * @name PromptPanel#hideProgressIndicator
-         * @method
          */
         hideProgressIndicator: function() {
           this.getDashboard().hideProgressIndicator();
@@ -1546,8 +1484,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Sets the default options for blockUI
          *
-         * @name PromptPanel#setBlockUiOptions
-         * @method
          * @param {Object} options - The options to configure the block ui
          * @param {string} options.message - The message or html to display on block ui
          * @param {Object} options.css - A json that accepts valid css key/value pairs
@@ -1581,8 +1517,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Gets a current state of the prompting system.
          *
-         * @name PromptPanel#getState
-         * @method
          * @returns {Object} The current state which consists of the next properties:
          *                   <ul>
          *                     <li>'promptNeeded' &lt;Boolean&gt; - True if prompts are needed, False otherwise (read only property)</li>
@@ -1626,8 +1560,6 @@ define(['cdf/lib/Base', 'cdf/Logger', 'dojo/number', 'dojo/i18n', 'common-ui/uti
         /**
          * Modifys a state of the prompting system.
          *
-         * @name PromptPanel#setState
-         * @method
          * @param {Object} state                      The set of flags which will be applied to current state.
          * @param {Boolean} [state.parametersChanged] True if the parameters have changed, False otherwise
          * @param {Boolean} [state.autoSubmit]        True is the prompt is in auto submit mode, False otherwise. It's limited by the 'allowAutoSubmit' flag
