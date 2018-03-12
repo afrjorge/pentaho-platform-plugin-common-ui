@@ -76,7 +76,8 @@ function(Base, Logger, DojoNumber, i18n, Utils, GUIDHelper, WidgetBuilder, Dashb
    */
   function _createWidget(options, type) {
     var newObj = $.extend(options, {
-      promptPanel: this
+      promptPanel: this,
+      useCache: false
     });
     return this.widgetBuilder.build(newObj, type);
   }
@@ -1226,12 +1227,12 @@ function(Base, Logger, DojoNumber, i18n, Utils, GUIDHelper, WidgetBuilder, Dashb
               }
 
               updateNeeded = _areParamsDifferent(dashboardParameter, paramSelectedValues, param.type);
-              if(!updateNeeded && param.isErrorChanged) {
+              if(param.isErrorChanged) {
                 updateNeeded = true;
               }
             }
 
-            if(updateNeeded) {
+            if(updateNeeded && component.isManaged !== false) {
               var groupPanel = this.dashboard.getComponentByName(groupName);
               _mapComponents(groupPanel, function(component) {
                 this.dashboard.updateComponent(component);
